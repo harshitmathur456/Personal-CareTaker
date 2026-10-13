@@ -96,24 +96,6 @@ export const LoginFlow: React.FC<LoginFlowProps> = ({ onLoginSuccess }) => {
             </div>
           </div>
         </div>
-
-        {/* Live Metrics Trust Banner */}
-        <div style={{ background: 'rgba(0, 0, 0, 0.15)', borderRadius: 'var(--radius-lg)', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', border: '1px solid rgba(255, 255, 255, 0.15)' }}>
-          <div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 800 }}>96.8%</div>
-            <div style={{ fontSize: '0.74rem', color: '#ccfbf1' }}>On-Time Dose Adherence</div>
-          </div>
-          <div style={{ width: '1px', height: '32px', background: 'rgba(255, 255, 255, 0.2)' }}></div>
-          <div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 800 }}>100%</div>
-            <div style={{ fontSize: '0.74rem', color: '#ccfbf1' }}>Source Traceability</div>
-          </div>
-          <div style={{ width: '1px', height: '32px', background: 'rgba(255, 255, 255, 0.2)' }}></div>
-          <div>
-            <div style={{ fontSize: '1.4rem', fontWeight: 800 }}>0</div>
-            <div style={{ fontSize: '0.74rem', color: '#ccfbf1' }}>Unverified Doses Released</div>
-          </div>
-        </div>
       </div>
 
       {/* Right Column: Modern Authentication Portal */}

@@ -622,7 +622,7 @@ body::before {
   color: #ffffff;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: center;
   box-shadow: var(--shadow-xl);
   position: relative;
   overflow: hidden;
