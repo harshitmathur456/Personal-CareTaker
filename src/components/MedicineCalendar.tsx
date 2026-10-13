@@ -53,14 +53,66 @@ export const MedicineCalendar: React.FC<MedicineCalendarProps> = ({
 
   const slotsOrder: Slot[] = ['Morning', 'Afternoon', 'Night', 'Bedtime', 'SOS'];
 
-  // Calculate adherence statistics
-  const totalDoses = doses.length;
-  const takenDoses = doses.filter((d) => d.status === 'taken').length;
+  // Week days
+  const weekDays = [
+    { label: 'Tue, Oct 13 (Today)', offset: 0, date: '13 Oct' },
+    { label: 'Wed, Oct 14', offset: 1, date: '14 Oct' },
+    { label: 'Thu, Oct 15', offset: 2, date: '15 Oct' },
+    { label: 'Fri, Oct 16', offset: 3, date: '16 Oct' },
+    { label: 'Sat, Oct 17', offset: 4, date: '17 Oct' },
+    { label: 'Sun, Oct 18', offset: 5, date: '18 Oct' },
+    { label: 'Mon, Oct 19', offset: 6, date: '19 Oct' },
+  ];
+
+  // Future dates (offset 1 to 6 = Oct 14 to Oct 19) state:
+  const [futureDayDoses, setFutureDayDoses] = useState<Record<number, Record<string, { status: 'taken' | 'skipped'; confirmedAt?: string; skipReason?: string }>>>({});
+
+  // Active doses: Oct 13 shows live today status, Oct 14-19 are strictly UNTAKEN by default
+  const activeDoses = doses.map((d) => {
+    if (selectedDayOffset === 0) {
+      return d; // Today (Oct 13): live doses
+    }
+
+    const override = futureDayDoses[selectedDayOffset]?.[d.id];
+    if (override) {
+      return {
+        ...d,
+        status: override.status,
+        confirmedAt: override.confirmedAt,
+        skipReason: override.skipReason,
+      };
+    }
+
+    // Oct 14-19: strictly UNTAKEN
+    return {
+      ...d,
+      status: 'pending' as const,
+      confirmedAt: undefined,
+      skipReason: undefined,
+    };
+  });
+
+  // Calculate adherence statistics for the active selected day
+  const totalDoses = activeDoses.length;
+  const takenDoses = activeDoses.filter((d) => d.status === 'taken').length;
   const adherencePercentage = totalDoses > 0 ? Math.round((takenDoses / totalDoses) * 100) : 0;
 
   const handleMarkTaken = (doseId: string) => {
     medicalAudio.playDoseSuccessPing();
-    onUpdateDoseStatus(doseId, 'taken');
+    if (selectedDayOffset === 0) {
+      onUpdateDoseStatus(doseId, 'taken');
+    } else {
+      setFutureDayDoses((prev) => ({
+        ...prev,
+        [selectedDayOffset]: {
+          ...(prev[selectedDayOffset] || {}),
+          [doseId]: {
+            status: 'taken',
+            confirmedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          },
+        },
+      }));
+    }
 
     // Trigger subtle celebratory confetti
     try {
@@ -77,21 +129,23 @@ export const MedicineCalendar: React.FC<MedicineCalendarProps> = ({
 
   const handleConfirmSkip = () => {
     if (skipModalDoseId) {
-      onUpdateDoseStatus(skipModalDoseId, 'skipped', skipReasonText);
+      if (selectedDayOffset === 0) {
+        onUpdateDoseStatus(skipModalDoseId, 'skipped', skipReasonText);
+      } else {
+        setFutureDayDoses((prev) => ({
+          ...prev,
+          [selectedDayOffset]: {
+            ...(prev[selectedDayOffset] || {}),
+            [skipModalDoseId]: {
+              status: 'skipped',
+              skipReason: skipReasonText,
+            },
+          },
+        }));
+      }
       setSkipModalDoseId(null);
     }
   };
-
-  // Week days mock
-  const weekDays = [
-    { label: 'Tue, Oct 13 (Today)', offset: 0, date: '13 Oct' },
-    { label: 'Wed, Oct 14', offset: 1, date: '14 Oct' },
-    { label: 'Thu, Oct 15', offset: 2, date: '15 Oct' },
-    { label: 'Fri, Oct 16', offset: 3, date: '16 Oct' },
-    { label: 'Sat, Oct 17', offset: 4, date: '17 Oct' },
-    { label: 'Sun, Oct 18', offset: 5, date: '18 Oct' },
-    { label: 'Mon, Oct 19', offset: 6, date: '19 Oct' },
-  ];
 
   return (
     <div>
@@ -161,10 +215,12 @@ export const MedicineCalendar: React.FC<MedicineCalendarProps> = ({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
             <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Sparkles size={16} color="var(--teal-600)" />
-              Today's Adherence Rate
+              {selectedDayOffset === 0 ? "Today's Adherence Rate" : `${weekDays[selectedDayOffset].label} Adherence`}
             </span>
             <span style={{ fontSize: '0.88rem', fontWeight: 800, color: adherencePercentage >= 75 ? 'var(--emerald-600)' : 'var(--teal-700)' }}>
-              {takenDoses} of {totalDoses} doses taken ({adherencePercentage}%)
+              {selectedDayOffset === 0 
+                ? `${takenDoses} of ${totalDoses} doses taken (${adherencePercentage}%)`
+                : `${takenDoses} of ${totalDoses} taken · ${totalDoses - takenDoses} Untaken`}
             </span>
           </div>
           <div className="progress-bar-track">
@@ -205,7 +261,7 @@ export const MedicineCalendar: React.FC<MedicineCalendarProps> = ({
       {/* Slots Section */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
         {slotsOrder.map((slot) => {
-          const slotDoses = doses.filter((d) => d.slot === slot);
+          const slotDoses = activeDoses.filter((d) => d.slot === slot);
           if (slotDoses.length === 0) return null;
 
           const slotAllTaken = slotDoses.every((d) => d.status === 'taken');
@@ -216,12 +272,16 @@ export const MedicineCalendar: React.FC<MedicineCalendarProps> = ({
                 <div className="slot-title">
                   {slotIcons[slot]}
                   <span>{slot} Slot</span>
-                  {slotAllTaken && (
+                  {slotAllTaken ? (
                     <span style={{ fontSize: '0.75rem', color: 'var(--emerald-600)', background: 'var(--emerald-50)', padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-pill)', fontWeight: 700, border: '1px solid var(--emerald-100)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                       <CheckCircle2 size={13} />
                       Completed
                     </span>
-                  )}
+                  ) : selectedDayOffset > 0 ? (
+                    <span style={{ fontSize: '0.72rem', color: '#b45309', background: '#fef3c7', padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-pill)', fontWeight: 600, border: '1px solid #fde68a' }}>
+                      Untaken (Scheduled)
+                    </span>
+                  ) : null}
                 </div>
                 <div className="slot-time-badge">{slotTimes[slot]}</div>
               </div>
@@ -269,6 +329,13 @@ export const MedicineCalendar: React.FC<MedicineCalendarProps> = ({
                             <div style={{ fontSize: '0.75rem', color: 'var(--emerald-700)', fontWeight: 600, marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                               <CheckCircle2 size={13} />
                               Confirmed taken at {dose.confirmedAt}
+                            </div>
+                          )}
+
+                          {!isTaken && !isSkipped && selectedDayOffset > 0 && (
+                            <div style={{ fontSize: '0.75rem', color: '#b45309', fontWeight: 600, marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <Clock size={12} />
+                              Untaken · Scheduled for {weekDays[selectedDayOffset].date}
                             </div>
                           )}
 

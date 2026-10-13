@@ -81,10 +81,56 @@ export const MonthlyCalendar: React.FC<MonthlyCalendarProps> = ({
     return physioSessions.filter((s) => s.date === dateStr);
   };
 
-  // Selected date string
+  // Multi-day dose tracker: preserves that dates 14-19 are strictly UNTAKEN by default
+  const [multiDayDoses, setMultiDayDoses] = useState<Record<string, Record<string, { status: 'taken' | 'skipped'; confirmedAt?: string }>>>({});
+
+  // Selected date string & temporal classification
   const selectedDateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(selectedDayNumber).padStart(2, '0')}`;
   const selectedDayPhysio = getPhysioForDay(selectedDayNumber);
   const isSelectedDayCheckup = isCheckupDay(selectedDayNumber);
+  const isToday = currentYear === 2026 && currentMonth === 9 && selectedDayNumber === 13;
+  const isFutureDate = currentYear === 2026 && currentMonth === 9 ? selectedDayNumber > 13 : (currentYear > 2026 || currentMonth > 9);
+
+  // Compute active doses for the selected day: Oct 13 has morning taken, while 14-19 are UNTAKEN
+  const displayedDoses = doses.map((d) => {
+    if (isToday) {
+      return d; // Today: Oct 13 live doses
+    }
+
+    const dayOverride = multiDayDoses[selectedDateStr]?.[d.id];
+    if (dayOverride) {
+      return {
+        ...d,
+        status: dayOverride.status,
+        confirmedAt: dayOverride.confirmedAt,
+      };
+    }
+
+    // Oct 14-19 and future dates: strictly UNTAKEN
+    return {
+      ...d,
+      status: 'pending' as const,
+      confirmedAt: undefined,
+      skipReason: undefined,
+    };
+  });
+
+  const handleUpdateDayDose = (doseId: string, status: 'taken' | 'skipped') => {
+    if (isToday) {
+      onUpdateDoseStatus(doseId, status);
+    } else {
+      setMultiDayDoses((prev) => ({
+        ...prev,
+        [selectedDateStr]: {
+          ...(prev[selectedDateStr] || {}),
+          [doseId]: {
+            status,
+            confirmedAt: status === 'taken' ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined,
+          },
+        },
+      }));
+    }
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -309,17 +355,18 @@ export const MonthlyCalendar: React.FC<MonthlyCalendarProps> = ({
                         style={{
                           fontSize: '0.65rem',
                           fontWeight: 600,
-                          background: isSelected ? 'var(--teal-100)' : '#f1f5f9',
-                          color: 'var(--teal-900)',
+                          background: isSelected ? 'var(--teal-100)' : day === 13 ? '#ecfdf5' : '#f8fafc',
+                          color: day === 13 ? 'var(--emerald-800)' : 'var(--text-secondary)',
                           padding: '0.1rem 0.35rem',
                           borderRadius: '4px',
                           display: 'flex',
                           alignItems: 'center',
                           gap: '0.2rem',
+                          border: day === 13 ? '1px solid #a7f3d0' : '1px solid var(--border-light)',
                         }}
                       >
-                        <Pill size={9} color="var(--teal-700)" />
-                        <span>4 Doses</span>
+                        <Pill size={9} color={day === 13 ? 'var(--emerald-600)' : 'var(--teal-600)'} />
+                        <span>{day === 13 ? '1 Taken · 3 Due' : '4 Untaken'}</span>
                       </div>
                     )}
                   </div>
@@ -380,15 +427,29 @@ export const MonthlyCalendar: React.FC<MonthlyCalendarProps> = ({
 
           {/* Prescribed Doses for This Day */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <Pill size={15} color="var(--teal-600)" />
-                <span>Prescribed Medications ({doses.length} Doses)</span>
+                <span>Prescribed Medications ({displayedDoses.length} Doses)</span>
               </span>
+
+              {isToday ? (
+                <span style={{ fontSize: '0.74rem', color: 'var(--emerald-800)', background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-pill)', fontWeight: 700 }}>
+                  Today's Active Schedule
+                </span>
+              ) : isFutureDate ? (
+                <span style={{ fontSize: '0.74rem', color: '#b45309', background: '#fef3c7', border: '1px solid #fde68a', padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-pill)', fontWeight: 700 }}>
+                  Untaken · Scheduled for Oct {selectedDayNumber}
+                </span>
+              ) : (
+                <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', background: '#f1f5f9', padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-pill)', fontWeight: 600 }}>
+                  Hospital In-Patient Record
+                </span>
+              )}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', maxHeight: '380px', overflowY: 'auto' }}>
-              {doses.map((dose) => (
+              {displayedDoses.map((dose) => (
                 <div
                   key={dose.id}
                   style={{
@@ -415,20 +476,28 @@ export const MonthlyCalendar: React.FC<MonthlyCalendarProps> = ({
                     </div>
                   </div>
 
-                  <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     {dose.status === 'taken' ? (
                       <span style={{ fontSize: '0.75rem', color: 'var(--emerald-700)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                         <CheckCircle2 size={13} />
-                        Taken
+                        Taken {dose.confirmedAt ? `(${dose.confirmedAt})` : ''}
                       </span>
                     ) : (
-                      <button
-                        className="btn-success"
-                        style={{ padding: '0.35rem 0.65rem', fontSize: '0.78rem' }}
-                        onClick={() => onUpdateDoseStatus(dose.id, 'taken')}
-                      >
-                        Mark Taken
-                      </button>
+                      <>
+                        {isFutureDate && (
+                          <span style={{ fontSize: '0.72rem', color: '#b45309', background: '#fef3c7', padding: '0.15rem 0.45rem', borderRadius: '4px', fontWeight: 600, border: '1px solid #fde68a' }}>
+                            Untaken
+                          </span>
+                        )}
+                        <button
+                          className={isToday ? "btn-success" : "btn-outline"}
+                          style={{ padding: '0.35rem 0.65rem', fontSize: '0.78rem' }}
+                          onClick={() => handleUpdateDayDose(dose.id, 'taken')}
+                          title={`Mark dose taken for Oct ${selectedDayNumber}`}
+                        >
+                          Mark Taken
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
