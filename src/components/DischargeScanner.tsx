@@ -200,15 +200,17 @@ Emergency: Severe chest pain radiating to jaw, syncope, sudden orthopnea.
             </div>
           </div>
 
-          <div
-            className={`doc-sheet-paper ${isHighContrast ? 'contrast-mode' : ''}`}
-            style={{
-              transform: `rotate(${rotation}deg)`,
-              transition: 'transform 0.3s ease',
-              maxHeight: '580px',
-              overflowY: 'auto',
-            }}
-          >
+          <div className="doc-paper-container">
+            <div className="paper-clip-clamp" title="Attached Physical Hospital Document" />
+            <div
+              className={`doc-sheet-paper ${isHighContrast ? 'contrast-mode' : ''}`}
+              style={{
+                transform: `rotate(${rotation}deg)`,
+                transition: 'transform 0.3s ease',
+                maxHeight: '580px',
+                overflowY: 'auto',
+              }}
+            >
             {extractedRawText ? (
               <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#334155' }}>
                 {extractedRawText}
@@ -279,12 +281,20 @@ Emergency: Severe chest pain radiating to jaw, syncope, sudden orthopnea.
                 <div style={{ fontSize: '0.8rem', color: '#334155' }}>
                   L22: Review after {activePatient.nextCheckupDays} days in {activePatient.nextCheckupDepartment}. <br />
                   L23: Strict low sodium diet (&lt; 2g/day), restrict fluid intake to 1.5L max. <br />
-                  L24: Emergency: Severe chest pain, syncope, or extreme dyspnea at rest.
+                  <div style={{ marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px dashed #cbd5e1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div className="hospital-stamp-badge">
+                      ✓ Clinical Scanned Copy · IPD-8819
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                      Attending: Dr. Vikram Anand (Ph: 9898989898)
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
           </div>
         </div>
+      </div>
 
         {/* Right: Extracted Schema */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>

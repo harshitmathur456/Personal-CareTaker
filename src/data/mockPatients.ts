@@ -13,7 +13,7 @@ export const INITIAL_PATIENTS: Patient[] = [
     treatingDoctor: {
       name: 'Dr. Vikram Anand, MD, DM',
       specialty: 'Senior Consultant Interventional Cardiologist',
-      phone: '+91 98100 12345',
+      phone: '9898989898',
       regNo: 'DMC-61042',
     },
     emergencyHospitalPhone: '+91 11 2658 8500',

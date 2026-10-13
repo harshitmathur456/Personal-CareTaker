@@ -49,7 +49,7 @@ export const PatientRegistrationFlow: React.FC<PatientRegistrationFlowProps> = (
       treatingDoctor: {
         ...initialPatient.treatingDoctor,
         name: doctorName.trim() || 'Dr. Vikram Anand, MD',
-        phone: doctorPhone.trim() || '+91 98100 12345',
+        phone: doctorPhone.trim() || '9898989898',
       },
       documentTitle: `${hospitalName} Discharge Summary · IPD #${patientId}`,
     };
@@ -65,7 +65,7 @@ export const PatientRegistrationFlow: React.FC<PatientRegistrationFlowProps> = (
     setGender('Female');
     setAdmissionReason('Acute Coronary Syndrome (NSTEMI) · Post-PCI Stenting to LAD');
     setDoctorName('Dr. Vikram Anand, MD, DM');
-    setDoctorPhone('+91 98100 12345');
+    setDoctorPhone('9898989898');
   };
 
   return (

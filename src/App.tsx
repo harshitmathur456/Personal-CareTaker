@@ -34,6 +34,10 @@ export type AppFlowStep = 'login' | 'patient_info' | 'document_upload' | 'dashbo
 export const App: React.FC = () => {
   const [patients, setPatients] = useState<Patient[]>(INITIAL_PATIENTS);
   const [activePatientId, setActivePatientId] = useState<string>('pat-kamla-01');
+  const [authenticatedUser, setAuthenticatedUser] = useState<{ role: Role; name: string }>({
+    role: 'caregiver',
+    name: 'Priya Sharma (Family Caregiver)',
+  });
   const [currentRole, setCurrentRole] = useState<Role | 'scanner'>('caregiver');
   
   // App screen step: begins on login as requested
@@ -227,13 +231,16 @@ export const App: React.FC = () => {
         onOpenAuditLog={() => setIsAuditModalOpen(true)}
         onLogout={() => setCurrentFlowStep('login')}
         isLoggedIn={currentFlowStep !== 'login'}
+        authenticatedRole={authenticatedUser.role}
+        authenticatedUserName={authenticatedUser.name}
       />
 
       <main className="app-container">
         {/* Step 1: Login Screen */}
         {currentFlowStep === 'login' && (
           <LoginFlow
-            onLoginSuccess={(role) => {
+            onLoginSuccess={(role, name) => {
+              setAuthenticatedUser({ role, name });
               setCurrentRole(role);
               setCurrentFlowStep('dashboard');
             }}
@@ -375,14 +382,42 @@ export const App: React.FC = () => {
             {currentRole === 'nurse' && (
               <NurseSignoffQueue
                 patient={activePatient}
+                currentUserRole={authenticatedUser.role}
                 onApproveItem={handleApproveFlaggedItem}
                 onRemoveItem={handleRemoveFlaggedItem}
                 onGoToFamilyPlan={() => setCurrentRole('caregiver')}
               />
             )}
 
-            {currentRole === 'doctor' && (
+            {(currentRole === 'consulting_doctor' || currentRole === 'doctor') && (
               <DoctorView patient={activePatient} doses={doses} />
+            )}
+
+            {currentRole === 'physio' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div className="clinical-card" style={{ background: 'linear-gradient(135deg, #f0fdfa, #f8fafc)', border: '1px solid var(--border-teal)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--teal-700)', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        <Activity size={15} />
+                        Physio Doctor Rehabilitation Portal · Physical Recovery
+                      </div>
+                      <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.35rem' }}>
+                        Dr. Rahul Verma, MPT (Physio Doctor) · Patient: {activePatient.name}
+                      </h2>
+                      <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', maxWidth: '780px', marginTop: '0.25rem' }}>
+                        Post-PCI cardiac mobility protocols, sternal precautions, guided breathing exercises, and direct rehabilitation scheduling for home recovery.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <PhysiotherapyArranger
+                  patient={activePatient}
+                  sessions={physioSessions}
+                  onBookSession={handleBookPhysioSession}
+                />
+              </div>
             )}
 
             {currentRole === 'caregiver' && (

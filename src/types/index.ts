@@ -1,4 +1,4 @@
-export type Role = 'caregiver' | 'nurse' | 'doctor';
+export type Role = 'caregiver' | 'nurse' | 'physio' | 'consulting_doctor' | 'doctor';
 
 export type Slot = 'Morning' | 'Afternoon' | 'Night' | 'Bedtime' | 'SOS';
 

@@ -12,11 +12,12 @@ import {
   Lock,
   ArrowRight
 } from 'lucide-react';
-import { Patient, PlanItem, Slot } from '../types';
+import { Patient, PlanItem, Slot, Role } from '../types';
 import { medicalAudio } from '../services/audioService';
 
 interface NurseSignoffQueueProps {
   patient: Patient;
+  currentUserRole?: Role;
   onApproveItem: (
     itemId: string,
     updatedData: {
@@ -37,10 +38,32 @@ interface NurseSignoffQueueProps {
 
 export const NurseSignoffQueue: React.FC<NurseSignoffQueueProps> = ({
   patient,
+  currentUserRole = 'nurse',
   onApproveItem,
   onRemoveItem,
   onGoToFamilyPlan,
 }) => {
+  // Strict Security Check: Only Ward Nurse has sign-off authority
+  if (currentUserRole && currentUserRole !== 'nurse') {
+    return (
+      <div className="access-denied-card">
+        <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#fff1f2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem auto', color: 'var(--rose-600)' }}>
+          <Lock size={32} />
+        </div>
+        <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#991b1b', marginBottom: '0.5rem' }}>
+          Access Restricted · Ward Nurse Security Gate
+        </h3>
+        <p style={{ fontSize: '0.92rem', color: '#64748b', maxWidth: '480px', margin: '0 auto 1.5rem auto', lineHeight: '1.6' }}>
+          Quarantined medication sign-off and clinical safety approvals are strictly restricted to licensed nursing staff (RN). Access is blocked for Family Caregivers and Physio Doctors.
+        </p>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: '#f8fafc', padding: '0.5rem 1rem', borderRadius: 'var(--radius-pill)', border: '1px solid var(--border-light)', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+          <ShieldAlert size={15} color="var(--amber-600)" />
+          <span>Active Role: <strong>{currentUserRole}</strong> (Unauthorized for clinical prescription release)</span>
+        </div>
+      </div>
+    );
+  }
+
   const flaggedItems = patient.planItems.filter((i) => i.status === 'flagged');
 
   const [selectedItemId, setSelectedItemId] = useState<string | null>(
@@ -54,7 +77,7 @@ export const NurseSignoffQueue: React.FC<NurseSignoffQueueProps> = ({
   const [editedFrequencyCode, setEditedFrequencyCode] = useState<string>('SOS');
   const [editedTimingNotes, setEditedTimingNotes] = useState<string>('Dissolve 1 tablet under tongue SOS if acute chest tightness or breathlessness occurs. Max 2 tabs/24h. Call hospital if not relieved within 10 mins.');
   const [nurseName, setNurseName] = useState<string>('Sister Shalini Kumari, RN (Reg #RN-8924)');
-  const [clinicalNote, setClinicalNote] = useState<string>('Verified with Attending Cardiologist Dr. Vikram Anand. Clarified as sublingual Sorbitrate 5mg for acute cardiac angina/dyspnea.');
+  const [clinicalNote, setClinicalNote] = useState<string>('Verified with Attending Cardiologist Dr. Vikram Anand (Ph: 9898989898). Clarified as sublingual Sorbitrate 5mg for acute cardiac angina/dyspnea.');
 
   const activeItem = patient.planItems.find((i) => i.id === selectedItemId);
 
