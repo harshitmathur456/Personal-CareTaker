@@ -36,8 +36,8 @@ export const App: React.FC = () => {
   const [activePatientId, setActivePatientId] = useState<string>('pat-kamla-01');
   const [currentRole, setCurrentRole] = useState<Role | 'scanner'>('caregiver');
   
-  // App screen step: begins on dashboard or allows full linear onboarding
-  const [currentFlowStep, setCurrentFlowStep] = useState<AppFlowStep>('dashboard');
+  // App screen step: begins on login as requested
+  const [currentFlowStep, setCurrentFlowStep] = useState<AppFlowStep>('login');
 
   // Caregiver tabs: default to the requested Monthly Calendar view
   const [caregiverTab, setCaregiverTab] = useState<'monthly' | 'schedule' | 'checkup' | 'carecard' | 'food' | 'physio'>('monthly');
@@ -226,6 +226,7 @@ export const App: React.FC = () => {
         flaggedCount={flaggedCount}
         onOpenAuditLog={() => setIsAuditModalOpen(true)}
         onLogout={() => setCurrentFlowStep('login')}
+        isLoggedIn={currentFlowStep !== 'login'}
       />
 
       <main className="app-container">
@@ -234,7 +235,7 @@ export const App: React.FC = () => {
           <LoginFlow
             onLoginSuccess={(role) => {
               setCurrentRole(role);
-              setCurrentFlowStep('patient_info');
+              setCurrentFlowStep('dashboard');
             }}
           />
         )}
