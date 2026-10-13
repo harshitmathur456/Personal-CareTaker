@@ -23,6 +23,7 @@ import { CareCard } from './components/CareCard';
 import { NextCheckupCard } from './components/NextCheckupCard';
 import { FoodCheck } from './components/FoodCheck';
 import { PhysiotherapyArranger } from './components/PhysiotherapyArranger';
+import { PhysioDoctorScheduleView } from './components/PhysioDoctorScheduleView';
 import { DoseReminderModal } from './components/DoseReminderModal';
 import { AuditLogModal } from './components/AuditLogModal';
 import { LoginFlow } from './components/LoginFlow';
@@ -179,6 +180,12 @@ export const App: React.FC = () => {
 
   const handleBookPhysioSession = (session: PhysioSession) => {
     setPhysioSessions((prev) => [session, ...prev]);
+  };
+
+  const handleUpdatePhysioSessionNotes = (sessionId: string, newNotes: string) => {
+    setPhysioSessions((prev) =>
+      prev.map((s) => (s.id === sessionId ? { ...s, clinicalNotes: newNotes } : s))
+    );
   };
 
   const handleLogMeal = (meal: MealLog) => {
@@ -394,30 +401,11 @@ export const App: React.FC = () => {
             )}
 
             {currentRole === 'physio' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <div className="clinical-card" style={{ background: 'linear-gradient(135deg, #f0fdfa, #f8fafc)', border: '1px solid var(--border-teal)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-                    <div>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--teal-700)', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        <Activity size={15} />
-                        Physio Doctor Rehabilitation Portal · Physical Recovery
-                      </div>
-                      <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.35rem' }}>
-                        Dr. Rahul Verma, MPT (Physio Doctor) · Patient: {activePatient.name}
-                      </h2>
-                      <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', maxWidth: '780px', marginTop: '0.25rem' }}>
-                        Post-PCI cardiac mobility protocols, sternal precautions, guided breathing exercises, and direct rehabilitation scheduling for home recovery.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <PhysiotherapyArranger
-                  patient={activePatient}
-                  sessions={physioSessions}
-                  onBookSession={handleBookPhysioSession}
-                />
-              </div>
+              <PhysioDoctorScheduleView
+                patient={activePatient}
+                sessions={physioSessions}
+                onUpdateSessionNotes={handleUpdatePhysioSessionNotes}
+              />
             )}
 
             {currentRole === 'caregiver' && (

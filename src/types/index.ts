@@ -96,6 +96,11 @@ export interface PhysioSession {
   timeSlot: string;
   status: 'Confirmed' | 'Completed' | 'Pending';
   clinicalNotes: string;
+  sessionTitle?: string;
+  exerciseProtocol?: string[];
+  precautions?: string;
+  targetVitals?: string;
+  completionNotes?: string;
 }
 
 export interface FamilyMember {

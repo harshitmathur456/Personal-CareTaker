@@ -114,7 +114,7 @@ export const PhysiotherapyArranger: React.FC<PhysiotherapyArrangerProps> = ({
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span style={{ fontWeight: 800, fontSize: '0.98rem', color: 'var(--text-primary)' }}>
-                      {sess.providerName}
+                      {sess.sessionTitle ? `${sess.sessionTitle} · ${sess.providerName}` : sess.providerName}
                     </span>
                     <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--teal-700)', background: 'var(--teal-50)', padding: '0.15rem 0.5rem', borderRadius: 'var(--radius-pill)', border: '1px solid var(--teal-100)' }}>
                       {sess.mode}
